@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Screen Recorder</title>
+    <title>螢幕錄製與聲音錄製</title>
 </head>
 <body>
-    <h1>Screen Recorder</h1>
-    <button onclick="startScreenRecording()">Start Recording</button>
-    <button onclick="stopScreenRecording()">Stop Recording</button>
-    <script src="recorder.js"></script>
+    <h1>螢幕與系統聲音錄製</h1>
+    <button id="startBtn">開始錄製</button>
+    <button id="stopBtn" disabled>停止錄製</button>
+    <div id="recordings"></div>
+    <script src="script.js"></script>
 </body>
 </html>
