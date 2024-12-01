@@ -2,21 +2,6 @@ let mediaRecorder;
 let chunks = [];
 let recordingInterval;
 
-async function getAudioDevices() {
-    const devices = await navigator.mediaDevices.enumerateDevices();
-    const audioDevices = devices.filter(device => device.kind === 'audioinput');
-    console.log(audioDevices); // 列出所有麥克風
-}
-
-// 列出音訊裝置後，讓用戶選擇一個特定的音源
-async function selectAudioInput(deviceId) {
-    const audioStream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-            deviceId: deviceId // 選定的麥克風 ID
-        }
-    });
-    return audioStream;
-}
 
 async function startScreenRecording() {
     try {
