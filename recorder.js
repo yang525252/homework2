@@ -1,81 +1,75 @@
 let mediaRecorder;
 let chunks = [];
+let recordingInterval;
 
-// 列出所有可用的音訊裝置
-async function getAudioDevices() {
-    const devices = await navigator.mediaDevices.enumerateDevices();
-    const audioDevices = devices.filter(device => device.kind === 'audioinput');
-    
-    // 動態生成選項清單
-    const select = document.getElementById('audioSource');
-    audioDevices.forEach(device => {
-        const option = document.createElement('option');
-        option.value = device.deviceId;
-        option.textContent = device.label || `Audio Device ${device.deviceId}`;
-        select.appendChild(option);
-    });
-}
-
-// 選擇特定音訊裝置並開始錄製
-async function startRecording() {
+async function startScreenRecording() {
     try {
-        const selectedDeviceId = document.getElementById('audioSource').value;
-        const audioStream = await navigator.mediaDevices.getUserMedia({
-            audio: {
-                deviceId: selectedDeviceId // 使用者選擇的音訊裝置
-            }
-        });
-
-        // 如果需要錄螢幕畫面，可以加入螢幕流
+        // 僅錄製螢幕畫面與系統音效（注意 audio: true）
         const screenStream = await navigator.mediaDevices.getDisplayMedia({
             video: true,
-            audio: false // 不錄系統音效
+            audio: true // 僅啟用系統音效
         });
 
-        // 合併螢幕與音訊流
-        const combinedStream = new MediaStream([
-            ...screenStream.getVideoTracks(),
-            ...audioStream.getAudioTracks()
-        ]);
-
         // 初始化 MediaRecorder
-        mediaRecorder = new MediaRecorder(combinedStream);
+        mediaRecorder = new MediaRecorder(screenStream);
+
+        // 處理錄製的數據
         mediaRecorder.ondataavailable = event => {
             if (event.data.size > 0) {
                 chunks.push(event.data);
             }
         };
 
+        // 停止錄製時保存檔案
         mediaRecorder.onstop = saveRecording;
-        mediaRecorder.start();
 
-        alert("Recording started!");
+        mediaRecorder.start();
+        alert("Screen recording started!");
+
+        // 每 5 分鐘自動分段保存
+        recordingInterval = setInterval(() => {
+            mediaRecorder.stop();
+            mediaRecorder.start();
+        }, 5 * 60 * 1000); // 每 5 分鐘
+
     } catch (error) {
         console.error("Error accessing media devices:", error);
     }
 }
+async function getAudioDevices() {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const audioDevices = devices.filter(device => device.kind === 'audioinput');
+    console.log(audioDevices); // 列出所有麥克風
+}
 
-// 停止錄製並保存
-function stopRecording() {
+// 列出音訊裝置後，讓用戶選擇一個特定的音源
+async function selectAudioInput(deviceId) {
+    const audioStream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+            deviceId: deviceId // 選定的麥克風 ID
+        }
+    });
+    return audioStream;
+}
+
+function stopScreenRecording() {
     if (mediaRecorder && mediaRecorder.state !== "inactive") {
-        mediaRecorder.stop();
-        alert("Recording stopped!");
+        clearInterval(recordingInterval); // 清除定時器
+        mediaRecorder.stop(); // 停止錄製
+        alert("Screen recording stopped!");
+    } else {
+        alert("No recording in progress.");
     }
 }
 
-// 保存錄製的影片
 function saveRecording() {
     const blob = new Blob(chunks, { type: 'video/webm' });
-    chunks = []; // 清空快取
+    chunks = []; // 清空快取，釋放記憶體
 
     // 生成下載鏈接
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `recorded-video-${Date.now()}.webm`;
+    a.download = `recorded-screen-with-audio-${Date.now()}.webm`;
     a.click();
 }
-
-document.addEventListener('DOMContentLoaded', () => {
-    getAudioDevices(); // 頁面載入後列出音訊裝置
-});
