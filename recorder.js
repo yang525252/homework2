@@ -4,44 +4,33 @@ let recordingInterval;
 
 async function startScreenRecording() {
     try {
-        // 獲取螢幕畫面
+        // 僅錄製螢幕畫面與系統音效（注意 audio: true）
         const screenStream = await navigator.mediaDevices.getDisplayMedia({
             video: true,
-            audio: true // 如果需要錄製系統音效，這裡必須為 true
+            audio: true // 僅啟用系統音效
         });
 
-        // 獲取麥克風音訊
-        const audioStream = await navigator.mediaDevices.getUserMedia({
-            audio: true
-        });
+        // 初始化 MediaRecorder
+        mediaRecorder = new MediaRecorder(screenStream);
 
-        // 合併音訊與螢幕影片
-        const combinedStream = new MediaStream([
-            ...screenStream.getVideoTracks(),
-            ...audioStream.getAudioTracks()
-        ]);
-
-        // 初始化錄製器
-        mediaRecorder = new MediaRecorder(combinedStream);
-
-        // 當有錄製資料時，儲存到 chunks
+        // 處理錄製的數據
         mediaRecorder.ondataavailable = event => {
             if (event.data.size > 0) {
                 chunks.push(event.data);
             }
         };
 
-        // 停止錄製時保存影片
+        // 停止錄製時保存檔案
         mediaRecorder.onstop = saveRecording;
 
         mediaRecorder.start();
-        alert("Screen recording with audio started!");
+        alert("Screen recording started!");
 
-        // 每 5 分鐘分段保存
+        // 每 5 分鐘自動分段保存
         recordingInterval = setInterval(() => {
             mediaRecorder.stop();
             mediaRecorder.start();
-        }, 5 * 60 * 1000); // 5 分鐘
+        }, 5 * 60 * 1000); // 每 5 分鐘
 
     } catch (error) {
         console.error("Error accessing media devices:", error);
@@ -50,8 +39,8 @@ async function startScreenRecording() {
 
 function stopScreenRecording() {
     if (mediaRecorder && mediaRecorder.state !== "inactive") {
-        clearInterval(recordingInterval); // 停止定時分段
-        mediaRecorder.stop(); // 完整停止錄製
+        clearInterval(recordingInterval); // 清除定時器
+        mediaRecorder.stop(); // 停止錄製
         alert("Screen recording stopped!");
     } else {
         alert("No recording in progress.");
